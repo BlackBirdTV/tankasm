@@ -1,17 +1,16 @@
-use std::any::{Any, TypeId, type_name};
 use std::collections::HashMap;
 
 pub fn prt(var: &mut (String, String, f32, bool)) {
 	match (var.0).as_str() {
-		"s" => println!("{}", var.1),
-		"n" => println!("{}", var.2),
-		"b" => println!("{}", var.3),
+		"s" => print!("{}", var.1),
+		"n" => print!("{}", var.2),
+		"b" => print!("{}", var.3),
 		_ => ()
 	}
 }
 
 pub fn mov(name: String, value: String, regs: &mut HashMap<String, (String, String, f32, bool)>) {
-	let var_type = name.chars().nth(1).unwrap();
+    let var_type = name.chars().nth(name.chars().position(|c| !"0123456789".contains(c)).unwrap()).unwrap();
 	match var_type {
 		's' => {
 			regs.insert(name, ("s".to_string(), value, 0f32, false));

@@ -1,23 +1,26 @@
 mod cmds;
 use std::collections::HashMap;
-use std::any::Any;
 use std::fs::*;
 use cmds::*;
+use console::*;
 
 const empty_string: String = String::new();
 static mut loaded: (String, String, f32, bool) = (empty_string, empty_string, 0f32, false);
-static mut i: usize = 0;
+static mut i: i32 = 0i32;
 
 fn main() {
     let file = read_to_string("E:\\Projects\\tankasm\\test\\test.tasm").unwrap_or("".to_string());
 
     let mut regs: HashMap<String, (String, String, f32, bool)> =  HashMap::new();
 
-    let lns = (&file).lines().count();
+    let lns = (&file).lines().count() as i32;
 
     unsafe {
         while i < lns {
-            run(parse(String::from(file.lines().nth(i).unwrap())), &mut regs);
+            if i < 0 {
+                i = 0;
+            }
+            run(parse(String::from(file.lines().nth(i as usize).unwrap())), &mut regs);
             i+=1;
         }
     }
@@ -56,22 +59,33 @@ fn run(inp: Vec<String>, regs: &mut HashMap<String, (String, String, f32, bool)>
     let cmd = cmd.as_str();
     let args = inp[1..].to_vec();
 
+    let template = &("s".to_owned(), "".to_owned(), 0f32, false);
+
     unsafe {
         match cmd {
             "prt" => prt(&mut loaded),
+            "read" => {
+                let stdin = Term::stdout();
+                loaded = ("s".to_owned(), format!("{}", stdin.read_char().unwrap_or(' ')), 0f32, false)
+            }
             "load" => {if regs.contains_key(&args[0]) { loaded = regs.get(&args[0]).unwrap().to_owned() } },
             "mov" => mov((&args[0]).to_owned(), (&args[1]).to_owned(), regs),
             "add" => {loaded = ((&loaded.0).to_owned(), (&loaded.1).to_owned(), loaded.2 + f32parse((&args[0]).to_owned()), loaded.3)},
+            "sub" => {loaded = ((&loaded.0).to_owned(), (&loaded.1).to_owned(), loaded.2 - f32parse((&args[0]).to_owned()), loaded.3)},
+            "mul" => {loaded = ((&loaded.0).to_owned(), (&loaded.1).to_owned(), loaded.2 * f32parse((&args[0]).to_owned()), loaded.3)},
+            "div" => {loaded = ((&loaded.0).to_owned(), (&loaded.1).to_owned(), loaded.2 / f32parse((&args[0]).to_owned()), loaded.3)},
+            "conc" => conc((&args).to_owned(), regs, regs.get(&args[0]).unwrap_or(template).to_owned()),
             "inst" => {regs.insert((&args[0]).to_owned(), (&loaded).to_owned());},
-            "goto" => { i = f32parse((&args[0]).to_owned()) as usize - 2 },
+            "goto" => { i = f32parse((&args[0]).to_owned()) as i32 - 2 },
             "if" => process_if(args, regs),
-            _ => ()
+            "lnb" => println!(),
+            _ => {}
         }
     }
 }
 
 fn process_if(args: Vec<String>, regs: &mut HashMap<String, (String, String, f32, bool)>) {
-    let lines = f32parse((&args[1]).to_owned()) as usize;
+    let lines = f32parse((&args[1]).to_owned()) as i32;
     let statement = (&args[0]).to_owned();
 
     if !eval(statement, regs) {
@@ -131,4 +145,8 @@ fn eval(inp: String, regs: &mut HashMap<String, (String, String, f32, bool)>) ->
         }
         _ => false
     }
+}
+
+fn conc(args: Vec<String>, regs:  &mut HashMap<String, (String, String, f32, bool)>, prev: (String, String, f32, bool)) {
+    unsafe { regs.insert((&args[0]).to_owned(), (prev.0, format!("{}{}", prev.1, &loaded.1), prev.2, prev.3)); }
 }
