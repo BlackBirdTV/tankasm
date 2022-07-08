@@ -70,6 +70,7 @@ fn run(inp: Vec<String>, regs: &mut HashMap<String, (String, String, f32, bool)>
             }
             "load" => {if regs.contains_key(&args[0]) { loaded = regs.get(&args[0]).unwrap().to_owned() } },
             "mov" => mov((&args[0]).to_owned(), (&args[1]).to_owned(), regs),
+            "dmov" => mov((&loaded.1).to_owned(), (&args[0]).to_owned(), regs),
             "add" => {loaded = ((&loaded.0).to_owned(), (&loaded.1).to_owned(), loaded.2 + f32parse((&args[0]).to_owned()), loaded.3)},
             "sub" => {loaded = ((&loaded.0).to_owned(), (&loaded.1).to_owned(), loaded.2 - f32parse((&args[0]).to_owned()), loaded.3)},
             "mul" => {loaded = ((&loaded.0).to_owned(), (&loaded.1).to_owned(), loaded.2 * f32parse((&args[0]).to_owned()), loaded.3)},

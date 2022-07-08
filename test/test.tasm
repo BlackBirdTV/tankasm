@@ -1,0 +1,6 @@
+mov 0svarname 0shelloworld
+load 0svarname
+dmov "Hello, world"
+load 0shelloworld
+prt
+lnb
