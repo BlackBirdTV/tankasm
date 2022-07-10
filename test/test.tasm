@@ -1,6 +1,8 @@
-mov 0svarname 0shelloworld
+mov 0svarname "Hello, world!"
 load 0svarname
-dmov "Hello, world"
-load 0shelloworld
+prt
+lnb
+flsh 0svarname
+load 0svarname
 prt
 lnb

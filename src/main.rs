@@ -1,7 +1,5 @@
-mod cmds;
 use std::collections::HashMap;
 use std::fs::*;
-use cmds::*;
 use console::*;
 
 const empty_string: String = String::new();
@@ -9,7 +7,7 @@ static mut loaded: (String, String, f32, bool) = (empty_string, empty_string, 0f
 static mut i: i32 = 0i32;
 
 fn main() {
-    let file = read_to_string("E:\\Projects\\tankasm\\test\\test.tasm").unwrap_or("".to_string());
+    let file = read_to_string("/home/andreas/tankasm/test/test.tasm").unwrap_or("".to_string());
 
     let mut regs: HashMap<String, (String, String, f32, bool)> =  HashMap::new();
 
@@ -68,7 +66,7 @@ fn run(inp: Vec<String>, regs: &mut HashMap<String, (String, String, f32, bool)>
                 let stdin = Term::stdout();
                 loaded = ("s".to_owned(), format!("{}", stdin.read_char().unwrap_or(' ')), 0f32, false)
             }
-            "load" => {if regs.contains_key(&args[0]) { loaded = regs.get(&args[0]).unwrap().to_owned() } },
+            "load" => { loaded = regs.get(&args[0]).unwrap_or(&("".to_owned(), "".to_owned(), 0f32, false)).to_owned() },
             "mov" => mov((&args[0]).to_owned(), (&args[1]).to_owned(), regs),
             "dmov" => mov((&loaded.1).to_owned(), (&args[0]).to_owned(), regs),
             "add" => {loaded = ((&loaded.0).to_owned(), (&loaded.1).to_owned(), loaded.2 + f32parse((&args[0]).to_owned()), loaded.3)},
@@ -80,6 +78,7 @@ fn run(inp: Vec<String>, regs: &mut HashMap<String, (String, String, f32, bool)>
             "goto" => { i = f32parse((&args[0]).to_owned()) as i32 - 2 },
             "if" => process_if(args, regs),
             "lnb" => println!(),
+            "flsh" => { regs.remove_entry(&args[0]); },
             _ => {}
         }
     }
@@ -150,4 +149,63 @@ fn eval(inp: String, regs: &mut HashMap<String, (String, String, f32, bool)>) ->
 
 fn conc(args: Vec<String>, regs:  &mut HashMap<String, (String, String, f32, bool)>, prev: (String, String, f32, bool)) {
     unsafe { regs.insert((&args[0]).to_owned(), (prev.0, format!("{}{}", prev.1, &loaded.1), prev.2, prev.3)); }
+}
+
+fn prt(var: &mut (String, String, f32, bool)) {
+	match (var.0).as_str() {
+		"s" => print!("{}", var.1),
+		"n" => print!("{}", var.2),
+		"b" => print!("{}", var.3),
+		_ => ()
+	}
+}
+
+fn mov(name: String, value: String, regs: &mut HashMap<String, (String, String, f32, bool)>) {
+    let var_type = name.chars().nth(name.chars().position(|c| !"0123456789".contains(c)).unwrap()).unwrap();
+	match var_type {
+		's' => {
+			regs.insert(name, ("s".to_string(), value, 0f32, false));
+		},
+		'n' => {
+			regs.insert(name, ("n".to_string(), "".to_string(), f32parse(value), false));
+		},
+		'b' => {
+			regs.insert(name, ("b".to_string(), "".to_string(), 0f32, value == String::from("true")));
+		},
+		_ => panic!()
+	}
+}
+
+fn f32parse(num: String) -> f32 {
+    let decimal = num.chars().position(|c| c == '.');
+    let dec_point = match decimal {
+        None => Option::from(num.len()),
+        _ => decimal   
+    }.unwrap();
+    let mut val = 0.0f32;
+    if dec_point != num.len() {
+        for (j, c) in num[dec_point+1..].chars().enumerate() {
+            val += char_to_num(c) * ((0.1f32).powf((j as f32)+1.0))
+        }
+    }
+    for (j, c) in num[..dec_point].chars().rev().enumerate() {
+        val += char_to_num(c) * ((10f32).powf(j as f32))
+    }
+    return val;
+}
+
+fn char_to_num(char: char) -> f32 {
+    return match char {
+        '0' => 0.0,
+        '1' => 1.0,
+        '2' => 2.0,
+        '3' => 3.0,
+        '4' => 4.0,
+        '5' => 5.0,
+        '6' => 6.0,
+        '7' => 7.0,
+        '8' => 8.0,
+        '9' => 9.0,
+        _   => 0.0,
+    }
 }
